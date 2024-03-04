@@ -1,6 +1,7 @@
 import re
 import datetime as dt
 from datetime import datetime as dtdt
+from collections import UserDict
 
 class Field:
     pass
@@ -15,37 +16,30 @@ class Phone(Field):
             raise ValueError("Invalid phone number format. Must be 10 digits.")
         self.number = number
 
-class AddressBook:
-    def __init__(self):
-        self.data = []
-
+class AddressBook(UserDict):
     def add_record(self, record):
-        self.data.append(record)
+        self.data[record.name.name] = record
         return "Record added successfully."
 
     def find(self, name):
-        for record in self.data:
-            if record.name.name == name:
-                return record
-        return None
+        return self.data.get(name)
 
     def find_phone(self, phone_number):
-        for record in self.data:
+        for record in self.data.values():
             phone = record.find_phone(phone_number)
             if phone:
                 return phone
         return None
 
     def delete(self, name):
-        record = self.find(name)
-        if record:
-            self.data.remove(record)
+        if name in self.data:
+            del self.data[name]
             return "Record deleted successfully."
         else:
             return "Record not found."
 
     def show_all_records(self):
-        for record in self.data:
+        for record in self.data.values():
             print(f"Name: {record.name.name}")
             for phone in record.phones:
                 print(f"Phone: {phone.number}")
@@ -55,15 +49,15 @@ class AddressBook:
         tdate = dtdt.today().date()
         tdate.toordinal()
         bdays = []
-        for record in self.data:
+        for record in self.data.values():
             if record.birthday:
                 bdate = record.birthday.value
                 bdate = dt.date(tdate.year, bdate.month, bdate.day)
                 week_day = bdate.isoweekday()
                 bdo = bdate.toordinal()
                 days_between = bdo - tdate.toordinal()
-                if 0 <= days_between < 7:
-                    if week_day < 6:
+                if 0 <= days_between <= 7:
+                    if week_day < 7:
                         bdays.append({'name': record.name.name, 'birthday': bdate.isoformat().replace('-', '.')[:10]})
         return bdays
 
@@ -172,10 +166,10 @@ def show_all_records(address_book):
 
 @input_error
 def add_birthday(args, address_book):
-    name, birthday = args
+    name, birthday_str = args
     record = address_book.find(name)
     if record:
-        result = record.add_birthday(Birthday(birthday))
+        result = record.add_birthday(Birthday(birthday_str))
         return result
     else:
         return "Record not found."
